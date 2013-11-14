@@ -4,6 +4,7 @@ import (
 	"flag"
 	"os"
 	"fmt"
+	"net/url"
 )
 
 func main() {
@@ -27,5 +28,6 @@ func main() {
 	}
 
 	cs := CloudStackClient{}.New(apiurl, apikey, secret)
-	NewRequest(*cs, *request)
+	params := url.Values{}
+	NewRequest(*cs, *request, params)
 }
