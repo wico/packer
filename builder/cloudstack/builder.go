@@ -30,6 +30,9 @@ type config struct {
 	RawSSHTimeout   string `mapstructure:"ssh_timeout"`
 	RawStateTimeout string `mapstructure:"state_timeout"`
 
+	SSHUsername  string `mapstructure:"ssh_username"`
+	SSHPort      uint   `mapstructure:"ssh_port"`
+
 	// These are unexported since they're set by other fields
 	// being set.
 	sshTimeout   time.Duration
@@ -86,7 +89,7 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 	}
 
 	if b.config.ServiceOfferingId == "" {
-		b.config.ServiceOfferingid = "62fc8ae5-06ac-4021-bed6-90dfdca6b6b5"
+		b.config.ServiceOfferingId = "62fc8ae5-06ac-4021-bed6-90dfdca6b6b5"
 	}
 
 	if b.config.TemplateId == "" {
@@ -186,13 +189,13 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 		return nil, errs
 	}
 
-	common.ScrubConfig(b.config, b.config.APIKEY, b.config.Secret)
+	common.ScrubConfig(b.config, b.config.APIKey, b.config.Secret)
 	return nil, nil
 }
 
 func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packer.Artifact, error) {
 	// Initialize the CloudStack API client
-	client := CloudStackClient{}.New(b.config.ClientID, b.config.APIKey)
+	client := CloudStackClient{}.New(b.config.APIURL, b.config.APIKey, b.config.Secret)
 
 	// Set up the state
 	state := new(multistep.BasicStateBag)
@@ -214,8 +217,6 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 		new(common.StepProvision),
 		new(stepStopVirtualMachine),
 		new(stepCreateTemplate),
-		new(stepDestroyVirtualMachine),
-		new(stepDeleteSSHKeyPair),
 	}
 
 	// Run the steps
@@ -235,14 +236,14 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 		return nil, rawErr.(error)
 	}
 
-	if _, ok := state.GetOk("snapshot_name"); !ok {
-		log.Println("Failed to find snapshot_name in state. Bug?")
+	if _, ok := state.GetOk("template_name"); !ok {
+		log.Println("Failed to find template_name in state. Bug?")
 		return nil, nil
 	}
 
 	artifact := &Artifact{
-		snapshotName: state.Get("snapshot_name").(string),
-		snapshotId:   state.Get("snapshot_image_id").(uint),
+		templateName: state.Get("template_name").(string),
+		templateId:   state.Get("template_id").(string),
 		client:       client,
 	}
 

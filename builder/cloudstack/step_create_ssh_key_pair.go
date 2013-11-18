@@ -8,11 +8,11 @@ import (
 	"log"
 )
 
-type stepCreateSSHKey struct {
+type stepCreateSSHKeyPair struct {
 	keyName string
 }
 
-func (s *stepCreateSSHKey) Run(state multistep.StateBag) multistep.StepAction {
+func (s *stepCreateSSHKeyPair) Run(state multistep.StateBag) multistep.StepAction {
 	client := state.Get("client").(*CloudStackClient)
 	ui := state.Get("ui").(packer.Ui)
 
@@ -41,9 +41,9 @@ func (s *stepCreateSSHKey) Run(state multistep.StateBag) multistep.StepAction {
 	return multistep.ActionContinue
 }
 
-func (s *stepCreateSSHKey) Cleanup(state multistep.StateBag) {
+func (s *stepCreateSSHKeyPair) Cleanup(state multistep.StateBag) {
 	// If no key name is set, then we never created it, so just return
-	if s.keyName == 0 {
+	if s.keyName == "" {
 		return
 	}
 
@@ -52,7 +52,7 @@ func (s *stepCreateSSHKey) Cleanup(state multistep.StateBag) {
 	c := state.Get("config").(config)
 
 	ui.Say("Deleting temporary ssh key...")
-	err := client.DeleteSSHKeyPair(s.keyName)
+	_, err := client.DeleteSSHKeyPair(s.keyName)
 
 	if err != nil {
 		log.Printf("Error cleaning up ssh key: %v", err.Error())

@@ -1,4 +1,4 @@
-package digitalocean
+package cloudstack
 
 import (
 	"fmt"
@@ -6,15 +6,15 @@ import (
 	"github.com/mitchellh/packer/packer"
 )
 
-type stepDropletInfo struct{}
+type stepVirtualMachineState struct{}
 
-func (s *stepDropletInfo) Run(state multistep.StateBag) multistep.StepAction {
-	client := state.Get("client").(*DigitalOceanClient)
+func (s *stepVirtualMachineState) Run(state multistep.StateBag) multistep.StepAction {
+	client := state.Get("client").(*CloudStackClient)
 	ui := state.Get("ui").(packer.Ui)
 	c := state.Get("config").(config)
-	dropletId := state.Get("droplet_id").(uint)
+	id := state.Get("virtual_machine_id")
 
-	ui.Say("Waiting for droplet to become active...")
+	ui.Say("Waiting for virtual machine to become active...")
 
 	err := waitForDropletState("active", dropletId, client, c.stateTimeout)
 	if err != nil {
@@ -27,17 +27,17 @@ func (s *stepDropletInfo) Run(state multistep.StateBag) multistep.StepAction {
 	// Set the IP on the state for later
 	ip, _, err := client.DropletStatus(dropletId)
 	if err != nil {
-		err := fmt.Errorf("Error retrieving droplet ID: %s", err)
+		err := fmt.Errorf("Error retrieving virtual machine IP: %s", err)
 		state.Put("error", err)
 		ui.Error(err.Error())
 		return multistep.ActionHalt
 	}
 
-	state.Put("droplet_ip", ip)
+	state.Put("virtual_machine_ip", ip)
 
 	return multistep.ActionContinue
 }
 
-func (s *stepDropletInfo) Cleanup(state multistep.StateBag) {
+func (s *stepVirtualMachineState) Cleanup(state multistep.StateBag) {
 	// no cleanup
 }

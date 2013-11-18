@@ -53,14 +53,14 @@ func (cloudstack CloudStackClient) New(apiurl string, apikey string, secret stri
 }
 
 // Create a SSH key pair
-func (c CloudStackClient) CreateSSHKeyPair(name string) (uint, error) {
+func (c CloudStackClient) CreateSSHKeyPair(name string) (string, error) {
 	params := url.Values{}
 	params.Set("name", name)
 	_, err := NewRequest(c, "createSSHKeyPair", params)
 	// fingerprint
 	// name
 	// privatekey
-	return 0, err
+	return "", err
 }
 
 // Deletes an SSH key

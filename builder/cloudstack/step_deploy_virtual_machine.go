@@ -22,7 +22,7 @@ func (s *stepDeployVirtualMachine) Run(state multistep.StateBag) multistep.StepA
 	// Some random virtual machine name as it's temporary
 	name := fmt.Sprintf("packer-%s", uuid.TimeOrderedUUID())
 
-	// Create the droplet based on configuration
+	// Create the virtual machine based on configuration
 	id, err := client.DeployVirtualMachine(name, c.ServiceOfferingId, c.TemplateId, c.ZoneId, sshKeyName)
 	if err != nil {
 		err := fmt.Errorf("Error deploying Virtual Machine: %s", err)
@@ -40,7 +40,7 @@ func (s *stepDeployVirtualMachine) Run(state multistep.StateBag) multistep.StepA
 	return multistep.ActionContinue
 }
 
-func (s *stepCreateDroplet) Cleanup(state multistep.StateBag) {
+func (s *stepDeployVirtualMachine) Cleanup(state multistep.StateBag) {
 	// If the virtual machine id isn't there, we probably never created it
 	if s.id == 0 {
 		return

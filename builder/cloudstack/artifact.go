@@ -34,6 +34,7 @@ func (a *Artifact) String() string {
 }
 
 func (a *Artifact) Destroy() error {
-	log.Printf("Destroying template: %d", a.templateId)
-	return a.client.DestroyTemplate(a.templateId)
+	log.Printf("Delete template: %s", a.templateId)
+	_, err := a.client.DeleteTemplate(a.templateId)
+	return err
 }
