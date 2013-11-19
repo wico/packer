@@ -56,10 +56,13 @@ func (cloudstack CloudStackClient) New(apiurl string, apikey string, secret stri
 func (c CloudStackClient) CreateSSHKeyPair(name string) (string, error) {
 	params := url.Values{}
 	params.Set("name", name)
-	_, err := NewRequest(c, "createSSHKeyPair", params)
-	// fingerprint
-	// name
-	// privatekey
+	response, err := NewRequest(c, "createSSHKeyPair", params)
+
+	fmt.Println(response)
+	// if present == true {
+	// 	fmt.Println(decodedResponse["listvirtualmachinesresponse"].(interface{}))
+	// }
+
 	return "", err
 }
 
@@ -186,8 +189,6 @@ func NewRequest(c CloudStackClient, request string, params url.Values) (map[stri
 		return nil, err
 	}
 
-	log.Printf("response from cloudstack: %s", body)
-
 	var decodedResponse map[string]interface{}
 	err = json.Unmarshal(body, &decodedResponse)
 	if err != nil {
@@ -196,5 +197,12 @@ func NewRequest(c CloudStackClient, request string, params url.Values) (map[stri
 		return decodedResponse, err
 	}
 
-	return decodedResponse, nil
+	// If the API call was successful CloudStack shall return API
+	// call name + "response" as the first key in the JSON blod.
+	_, status := decodedResponse[strings.ToLower(request) + "response"].(interface{})
+	if status != true {
+		return decodedResponse, errors.New("CloudStack API call failed for unknown reason")
+	} else {
+		return decodedResponse, nil
+	}
 }
