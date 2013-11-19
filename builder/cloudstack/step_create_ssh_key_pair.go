@@ -49,7 +49,6 @@ func (s *stepCreateSSHKeyPair) Cleanup(state multistep.StateBag) {
 
 	client := state.Get("client").(*CloudStackClient)
 	ui := state.Get("ui").(packer.Ui)
-	c := state.Get("config").(config)
 
 	ui.Say("Deleting temporary ssh key...")
 	_, err := client.DeleteSSHKeyPair(s.keyName)

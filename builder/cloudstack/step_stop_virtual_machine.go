@@ -13,9 +13,9 @@ func (s *stepStopVirtualMachine) Run(state multistep.StateBag) multistep.StepAct
 	client := state.Get("client").(*CloudStackClient)
 	c := state.Get("config").(config)
 	ui := state.Get("ui").(packer.Ui)
-	id := state.Get("virtual_machine_id").(uint)
+	id := state.Get("virtual_machine_id").(string)
 
-	_, status, err := client.VirtualMachineState(dropletId)
+	_, status, err := client.VirtualMachineState(id)
 	if err != nil {
 		err := fmt.Errorf("Error checking virtual machine state: %s", err)
 		state.Put("error", err)
@@ -30,7 +30,7 @@ func (s *stepStopVirtualMachine) Run(state multistep.StateBag) multistep.StepAct
 
 	// Stop the virtual machine
 	ui.Say("Stopping Virtual Machine...")
-	err = client.StopVirtualMachine(id)
+	jobId, err := client.StopVirtualMachine(id)
 	if err != nil {
 		err := fmt.Errorf("Error powering off virtual machine: %s", err)
 		state.Put("error", err)
@@ -38,9 +38,8 @@ func (s *stepStopVirtualMachine) Run(state multistep.StateBag) multistep.StepAct
 		return multistep.ActionHalt
 	}
 
-	// FIXME: Implement this function
 	log.Println("Waiting for stop event to complete...")
-	err = waitForDropletState("off", id, client, c.stateTimeout)
+	err = waitForAsyncJob(jobId, client, c.stateTimeout)
 	if err != nil {
 		state.Put("error", err)
 		ui.Error(err.Error())

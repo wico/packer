@@ -72,19 +72,20 @@ func (c CloudStackClient) DeleteSSHKeyPair(name string) (uint, error) {
 }
 
 // Deploys a Virtual Machine and returns it's id
-func (c CloudStackClient) DeployVirtualMachine(serviceofferingid string, templateid string, zoneid string, keypair string) (uint, error) {
+func (c CloudStackClient) DeployVirtualMachine(serviceofferingid string, templateid string, zoneid string, keypair string, displayname string) (string, error) {
 	params := url.Values{}
 	params.Set("serviceofferingid", serviceofferingid)
 	params.Set("templateid", templateid)
 	params.Set("zoneid", zoneid)
 	params.Set("keypair", keypair)
+	params.Set("displayname", displayname)
 
 	_, err := NewRequest(c, "deployVirtualMachine", params)
 	if err != nil {
-		return 0, err
+		return "", err
 	}
 
-	return 0, err
+	return "jobId", err
 }
 
 // Destroys a Virtual Machine
@@ -96,22 +97,23 @@ func (c CloudStackClient) DestroyVirtualMachine(id string) (uint, error) {
 }
 
 // Stops a Virtual Machine
-func (c CloudStackClient) StopVirtualMachine(id string) (uint, error) {
+func (c CloudStackClient) StopVirtualMachine(id string) (string, error) {
 	params := url.Values{}
 	params.Set("id", id)
 	_, err := NewRequest(c, "stopVirtualMachine", params)
-	return 0, err
+	return "jobId", err
 }
 
 // Creates a Template of a Virtual Machine by it's ID
-func (c CloudStackClient) CreateTemplate(displaytext string, name string, osid string, volumeid string, ostypeid string) (uint, error) {
+func (c CloudStackClient) CreateTemplate(displaytext string, name string, volumeid string, ostypeid string) (string, error) {
 	params := url.Values{}
 	params.Set("displaytext", displaytext)
 	params.Set("name", name)
 	params.Set("ostypeid", ostypeid)
 	params.Set("volumeid", volumeid)
 	_, err := NewRequest(c, "createTemplate", params)
-	return 0, err
+	// return async job id
+	return "jobId", err
 }
 
 // Returns all available templates
@@ -131,20 +133,20 @@ func (c CloudStackClient) DeleteTemplate(id string) (uint, error) {
 }
 
 // Returns CloudStack string representation of status "off" "new" "active" etc.
-func (c CloudStackClient) VirtualMachineState(id string) (string, error) {
+func (c CloudStackClient) VirtualMachineState(id string) (string, string, error) {
 	params := url.Values{}
 	params.Set("id", id)
 	_, err := NewRequest(c, "listVirtualMachines", params)
-	// unpack state from json
-	return "", err
+	// unpack state from json, return IP somehow as well
+	return "1.2.3.4", "", err
 }
 
 // Query CloudStack for the state of a scheduled job
-func (c CloudStackClient) QueryAsyncJobResult(id string) (uint, error) {
+func (c CloudStackClient) QueryAsyncJobResult(id string) (string, error) {
 	params := url.Values{}
 	params.Set("id", id)
 	_, err := NewRequest(c, "queryAsyncJobResult", params)
-	return 0, err
+	return "state", err
 }
 
 func NewRequest(c CloudStackClient, request string, params url.Values) (map[string]interface{}, error) {

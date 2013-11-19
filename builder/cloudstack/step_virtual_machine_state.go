@@ -12,20 +12,22 @@ func (s *stepVirtualMachineState) Run(state multistep.StateBag) multistep.StepAc
 	client := state.Get("client").(*CloudStackClient)
 	ui := state.Get("ui").(packer.Ui)
 	c := state.Get("config").(config)
-	id := state.Get("virtual_machine_id")
+	id := state.Get("virtual_machine_id").(string)
 
 	ui.Say("Waiting for virtual machine to become active...")
 
-	err := waitForDropletState("active", dropletId, client, c.stateTimeout)
+	// fetch jobId somehow
+	jobId := "jobId"
+	err := waitForAsyncJob(jobId, client, c.stateTimeout)
 	if err != nil {
-		err := fmt.Errorf("Error waiting for droplet to become active: %s", err)
+		err := fmt.Errorf("Error waiting for virtual machine to become active: %s", err)
 		state.Put("error", err)
 		ui.Error(err.Error())
 		return multistep.ActionHalt
 	}
 
 	// Set the IP on the state for later
-	ip, _, err := client.DropletStatus(dropletId)
+	ip, _ , err := client.VirtualMachineState(id)
 	if err != nil {
 		err := fmt.Errorf("Error retrieving virtual machine IP: %s", err)
 		state.Put("error", err)

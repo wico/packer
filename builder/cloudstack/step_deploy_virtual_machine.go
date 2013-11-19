@@ -15,15 +15,15 @@ func (s *stepDeployVirtualMachine) Run(state multistep.StateBag) multistep.StepA
 	client := state.Get("client").(*CloudStackClient)
 	ui := state.Get("ui").(packer.Ui)
 	c := state.Get("config").(config)
-	sshKeyName := state.Get("ssh_key_name")
+	sshKeyName := state.Get("ssh_key_name").(string)
 
 	ui.Say("Creating virtual machine...")
 
 	// Some random virtual machine name as it's temporary
-	name := fmt.Sprintf("packer-%s", uuid.TimeOrderedUUID())
+	displayName := fmt.Sprintf("packer-%s", uuid.TimeOrderedUUID())
 
 	// Create the virtual machine based on configuration
-	id, err := client.DeployVirtualMachine(name, c.ServiceOfferingId, c.TemplateId, c.ZoneId, sshKeyName)
+	id, err := client.DeployVirtualMachine(c.ServiceOfferingId, c.TemplateId, c.ZoneId, sshKeyName, displayName)
 	if err != nil {
 		err := fmt.Errorf("Error deploying Virtual Machine: %s", err)
 		state.Put("error", err)
@@ -42,18 +42,17 @@ func (s *stepDeployVirtualMachine) Run(state multistep.StateBag) multistep.StepA
 
 func (s *stepDeployVirtualMachine) Cleanup(state multistep.StateBag) {
 	// If the virtual machine id isn't there, we probably never created it
-	if s.id == 0 {
+	if s.id == "" {
 		return
 	}
 
 	client := state.Get("client").(*CloudStackClient)
 	ui := state.Get("ui").(packer.Ui)
-	c := state.Get("config").(config)
 
 	// Destroy the droplet we just created
 	ui.Say("Destroying virtual machine...")
 
-	err := client.DestroyVirtualMachine(s.id)
+	_, err := client.DestroyVirtualMachine(s.id)
 	if err != nil {
 		ui.Error(fmt.Sprintf(
 			"Error destroying droplet. Please destroy it manually."))
