@@ -10,6 +10,7 @@ import (
 
 type stepCreateSSHKeyPair struct {
 	keyName string
+	privateKey string
 }
 
 func (s *stepCreateSSHKeyPair) Run(state multistep.StateBag) multistep.StepAction {
@@ -22,7 +23,7 @@ func (s *stepCreateSSHKeyPair) Run(state multistep.StateBag) multistep.StepActio
 	name := fmt.Sprintf("packer-%s", uuid.TimeOrderedUUID())
 
 	// Create the key!
-	keyName, err := client.CreateSSHKeyPair(name)
+	privateKey, err := client.CreateSSHKeyPair(name)
 	if err != nil {
 		err := fmt.Errorf("Error creating temporary SSH key: %s", err)
 		state.Put("error", err)
@@ -31,12 +32,14 @@ func (s *stepCreateSSHKeyPair) Run(state multistep.StateBag) multistep.StepActio
 	}
 
 	// We use this to check cleanup
-	s.keyName = keyName
+	s.keyName = name
+	s.privateKey = privateKey
 
 	log.Printf("temporary ssh key name: %s", name)
 
 	// Remember some state for the future
-	state.Put("ssh_key_name", keyName)
+	state.Put("ssh_key_name", name)
+	state.Put("ssh_private_key", privateKey)
 
 	return multistep.ActionContinue
 }

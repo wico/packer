@@ -16,6 +16,35 @@ import (
 	"strings"
 )
 
+type CreateSshKeyPairResponse struct {
+	Createsshkeypairresponse struct {
+		Keypair struct {
+			Fingerprint string `json:"fingerprint"`
+			Name        string `json:"name"`
+			Privatekey  string `json:"privatekey"`
+		} `json:"keypair"`
+	} `json:"createsshkeypairresponse"`
+}
+
+type DeleteSshKeyPairResponse struct {
+	Deletesshkeypairresponse struct {
+		Success string `json:"success"`
+	} `json:"deletesshkeypairresponse"`
+}
+
+type DeployVirtualMachineResponse struct {
+	Deployvirtualmachineresponse struct {
+		ID    string `json:"id"`
+		Jobid string `json:"jobid"`
+	} `json:"deployvirtualmachineresponse"`
+}
+
+type DestroyVirtualMachineResponse struct {
+	Destroyvirtualmachineresponse struct {
+		Jobid string `json:"jobid"`
+	} `json:"destroyvirtualmachineresponse"`
+}
+
 type Template struct {
 	Id           string
 	Name         string
@@ -57,13 +86,11 @@ func (c CloudStackClient) CreateSSHKeyPair(name string) (string, error) {
 	params := url.Values{}
 	params.Set("name", name)
 	response, err := NewRequest(c, "createSSHKeyPair", params)
-
-	fmt.Println(response)
-	// if present == true {
-	// 	fmt.Println(decodedResponse["listvirtualmachinesresponse"].(interface{}))
-	// }
-
-	return "", err
+	if err != nil {
+		return "", err
+	}
+	privatekey := response.(CreateSshKeyPairResponse).Createsshkeypairresponse.Keypair.Privatekey
+	return privatekey, nil
 }
 
 // Deletes an SSH key
@@ -75,28 +102,34 @@ func (c CloudStackClient) DeleteSSHKeyPair(name string) (uint, error) {
 }
 
 // Deploys a Virtual Machine and returns it's id
-func (c CloudStackClient) DeployVirtualMachine(serviceofferingid string, templateid string, zoneid string, keypair string, displayname string) (string, error) {
+func (c CloudStackClient) DeployVirtualMachine(serviceofferingid string, templateid string, zoneid string, keypair string, displayname string, diskoffering string) (string, error) {
 	params := url.Values{}
 	params.Set("serviceofferingid", serviceofferingid)
 	params.Set("templateid", templateid)
 	params.Set("zoneid", zoneid)
 	params.Set("keypair", keypair)
 	params.Set("displayname", displayname)
-
-	_, err := NewRequest(c, "deployVirtualMachine", params)
+	if diskoffering != "" {
+		params.Set("diskoffering", diskoffering)
+	}
+	response, err := NewRequest(c, "deployVirtualMachine", params)
 	if err != nil {
 		return "", err
 	}
-
-	return "jobId", err
+	vmid := response.(DeployVirtualMachineResponse).Deployvirtualmachineresponse.ID
+	return vmid, nil
 }
 
 // Destroys a Virtual Machine
 func (c CloudStackClient) DestroyVirtualMachine(id string) (uint, error) {
 	params := url.Values{}
 	params.Set("id", id)
-	_, err := NewRequest(c, "destroyVirtualMachine", params)
-	return 0, err
+	response, err := NewRequest(c, "destroyVirtualMachine", params)
+	if err != nil {
+		return "", err
+	}
+	jobid := response.(DestroyVirtualMachineResponse).Destroyvirtualmachineresponse.Jobid
+	return jobid, nil
 }
 
 // Stops a Virtual Machine
@@ -152,7 +185,7 @@ func (c CloudStackClient) QueryAsyncJobResult(id string) (string, error) {
 	return "state", err
 }
 
-func NewRequest(c CloudStackClient, request string, params url.Values) (map[string]interface{}, error) {
+func NewRequest(c CloudStackClient, request string, params url.Values) (interface{}, error) {
 	client := c.client
 
 	params.Set("apikey", c.APIKey)
@@ -189,20 +222,36 @@ func NewRequest(c CloudStackClient, request string, params url.Values) (map[stri
 		return nil, err
 	}
 
-	var decodedResponse map[string]interface{}
-	err = json.Unmarshal(body, &decodedResponse)
-	if err != nil {
-		err = errors.New(fmt.Sprintf("Failed to decode JSON response (HTTP %v) from CloudStack: %s",
-			resp.StatusCode, body))
-		return decodedResponse, err
+	log.Printf("response from cloudstack: %d - %s", resp.StatusCode, body)
+	if resp.StatusCode != 200 {
+		err = errors.New(fmt.Sprintf("Received HTTP client/server error from CloudStack: %d", resp.StatusCode))
+		return nil,  err
 	}
 
-	// If the API call was successful CloudStack shall return API
-	// call name + "response" as the first key in the JSON blod.
-	_, status := decodedResponse[strings.ToLower(request) + "response"].(interface{})
-	if status != true {
-		return decodedResponse, errors.New("CloudStack API call failed for unknown reason")
-	} else {
+	switch request {
+	default:
+		log.Printf("Unknown request %s", request)
+	case "createSSHKeyPair" :
+		var decodedResponse CreateSshKeyPairResponse
+		json.Unmarshal(body, &decodedResponse)
+		return decodedResponse, nil
+
+	case "deleteSSHKeyPair":
+		var decodedResponse DeleteSshKeyPairResponse
+		json.Unmarshal(body, &decodedResponse)
+		return decodedResponse, nil
+
+	case "deployVirtualMachine":
+		var decodedResponse DeployVirtualMachineResponse
+		json.Unmarshal(body, &decodedResponse)
+		return decodedResponse, nil
+
+	case "destroyVirtualMachine":
+		var decodedResponse DestroyVirtualMachineResponse
+		json.Unmarshal(body, &decodedResponse)
 		return decodedResponse, nil
 	}
+
+	// only reached with unknown request
+	return "", nil
 }
