@@ -109,7 +109,7 @@ func (c CloudStackClient) DeployVirtualMachine(serviceofferingid string, templat
 	params.Set("zoneid", zoneid)
 	params.Set("networkids", strings.Join(networkids, ","))
 	params.Set("keypair", keypair)
-//	params.Set("displayname", displayname)
+	params.Set("displayname", displayname)
 	if diskoffering != "" {
 		params.Set("diskoffering", diskoffering)
 	}
