@@ -43,7 +43,7 @@ type config struct {
 	ServiceOfferingId string `mapstructure:"service_offering_id"`
 	TemplateId        string `mapstructure:"template_id"`
 	ZoneId            string `mapstructure:"zone_id"`
-	NetworkId         string `mapstructure:"network_id"`
+	NetworkIds        []string `mapstructure:"network_ids"`
 
 	// Tell CloudStack under which name, description to save the
 	// template.
@@ -101,8 +101,8 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 		b.config.ZoneId = "489e5147-85ba-4f28-a78d-226bf03db47c"
 	}
 
-	if b.config.NetworkId == "" {
-		b.config.NetworkId = "9ab9719e-1f03-40d1-bfbe-b5dbf598e27f"
+	if len(b.config.NetworkIds) < 1 {
+		b.config.NetworkIds = []string{"9ab9719e-1f03-40d1-bfbe-b5dbf598e27f"}
 	}
 
 	if b.config.TemplateName == "" {

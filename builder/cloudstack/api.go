@@ -102,14 +102,14 @@ func (c CloudStackClient) DeleteSSHKeyPair(name string) (uint, error) {
 }
 
 // Deploys a Virtual Machine and returns it's id
-func (c CloudStackClient) DeployVirtualMachine(serviceofferingid string, templateid string, zoneid string, networkid string, keypair string, displayname string, diskoffering string) (string, error) {
+func (c CloudStackClient) DeployVirtualMachine(serviceofferingid string, templateid string, zoneid string, networkids []string, keypair string, displayname string, diskoffering string) (string, error) {
 	params := url.Values{}
 	params.Set("serviceofferingid", serviceofferingid)
 	params.Set("templateid", templateid)
 	params.Set("zoneid", zoneid)
-	params.Set("networkid", networkid)
+	params.Set("networkids", strings.Join(networkids, ","))
 	params.Set("keypair", keypair)
-	params.Set("displayname", displayname)
+//	params.Set("displayname", displayname)
 	if diskoffering != "" {
 		params.Set("diskoffering", diskoffering)
 	}
