@@ -202,10 +202,8 @@ func NewRequest(c CloudStackClient, request string, params url.Values) (interfac
 	s2 := strings.ToLower(s)
 	mac := hmac.New(sha1.New, []byte(c.Secret))
 	mac.Write([]byte(s2))
-	signature := base64.URLEncoding.EncodeToString(mac.Sum(nil))
+	signature := base64.StdEncoding.EncodeToString(mac.Sum(nil))
 	signature = url.QueryEscape(signature)
-	// Apparently we need to manually(?) escape the underscore
-	signature = strings.Replace(signature, "_", "%2F", -1)
 
 	// Create the final URL before we issue the request
 	url := c.BaseURL + "?" + s + "&signature=" + signature
