@@ -6,5 +6,10 @@ import (
 )
 
 func main() {
-	plugin.ServeBuilder(new(cloudstack.Builder))
+	server, err := plugin.Server()
+	if err != nil {
+		panic(err)
+	}
+	server.RegisterBuilder(new(cloudstack.Builder))
+	server.Serve()
 }
