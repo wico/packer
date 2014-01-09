@@ -32,6 +32,7 @@ type config struct {
 
 	SSHUsername string `mapstructure:"ssh_username"`
 	SSHPort     uint   `mapstructure:"ssh_port"`
+	SSHKeyPath  string `mapstructure:"ssh_key_path"`
 
 	// These are unexported since they're set by other fields
 	// being set.
@@ -148,6 +149,7 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 		"template_name": &b.config.TemplateName,
 		"ssh_username":  &b.config.SSHUsername,
 		"ssh_timeout":   &b.config.RawSSHTimeout,
+		"ssh_key_path":  &b.config.SSHKeyPath,
 		"state_timeout": &b.config.RawStateTimeout,
 	}
 

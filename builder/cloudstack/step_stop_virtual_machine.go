@@ -23,8 +23,8 @@ func (s *stepStopVirtualMachine) Run(state multistep.StateBag) multistep.StepAct
 		return multistep.ActionHalt
 	}
 
-	if status == "off" {
-		// Droplet is already off, don't do anything
+	if status == "stopped" {
+		// Virtual Machine is already stopped, don't do anything
 		return multistep.ActionContinue
 	}
 
@@ -32,7 +32,7 @@ func (s *stepStopVirtualMachine) Run(state multistep.StateBag) multistep.StepAct
 	ui.Say("Stopping Virtual Machine...")
 	jobId, err := client.StopVirtualMachine(id)
 	if err != nil {
-		err := fmt.Errorf("Error powering off virtual machine: %s", err)
+		err := fmt.Errorf("Error stopping virtual machine: %s", err)
 		state.Put("error", err)
 		ui.Error(err.Error())
 		return multistep.ActionHalt
