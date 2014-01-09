@@ -39,7 +39,7 @@ func (s *stepStopVirtualMachine) Run(state multistep.StateBag) multistep.StepAct
 	}
 
 	log.Println("Waiting for stop event to complete...")
-	err = waitForAsyncJob(jobId, client, c.stateTimeout)
+	err = WaitForAsyncJob(jobId, client, c.stateTimeout)
 	if err != nil {
 		state.Put("error", err)
 		ui.Error(err.Error())

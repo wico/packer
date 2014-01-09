@@ -45,6 +45,19 @@ type DestroyVirtualMachineResponse struct {
 	} `json:"destroyvirtualmachineresponse"`
 }
 
+type QueryAsyncJobResultResponse struct {
+	Queryasyncjobresultresponse struct {
+		Accountid     string  `json:"accountid"`
+		Cmd           string  `json:"cmd"`
+		Created       string  `json:"created"`
+		Jobid         string  `json:"jobid"`
+		Jobprocstatus float64  `json:"jobprocstatus"`
+		Jobresultcode float64  `json:"jobresultcode"`
+		Jobstatus     float64  `json:"jobstatus"`
+		Userid        string  `json:"userid"`
+	} `json:"queryasyncjobresultresponse"`
+}
+
 type Template struct {
 	Id   string
 	Name string
@@ -102,7 +115,7 @@ func (c CloudStackClient) DeleteSSHKeyPair(name string) (uint, error) {
 }
 
 // Deploys a Virtual Machine and returns it's id
-func (c CloudStackClient) DeployVirtualMachine(serviceofferingid string, templateid string, zoneid string, networkids []string, keypair string, displayname string, diskoffering string) (string, error) {
+func (c CloudStackClient) DeployVirtualMachine(serviceofferingid string, templateid string, zoneid string, networkids []string, keypair string, displayname string, diskoffering string) (string, string, error) {
 	params := url.Values{}
 	params.Set("serviceofferingid", serviceofferingid)
 	params.Set("templateid", templateid)
@@ -115,10 +128,11 @@ func (c CloudStackClient) DeployVirtualMachine(serviceofferingid string, templat
 	}
 	response, err := NewRequest(c, "deployVirtualMachine", params)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	vmid := response.(DeployVirtualMachineResponse).Deployvirtualmachineresponse.ID
-	return vmid, nil
+	jobid := response.(DeployVirtualMachineResponse).Deployvirtualmachineresponse.Jobid
+	return vmid, jobid, nil
 }
 
 // Destroys a Virtual Machine
@@ -179,11 +193,19 @@ func (c CloudStackClient) VirtualMachineState(id string) (string, string, error)
 }
 
 // Query CloudStack for the state of a scheduled job
-func (c CloudStackClient) QueryAsyncJobResult(id string) (string, error) {
+func (c CloudStackClient) QueryAsyncJobResult(jobid string) (float64, error) {
 	params := url.Values{}
-	params.Set("id", id)
-	_, err := NewRequest(c, "queryAsyncJobResult", params)
-	return "state", err
+	params.Set("jobid", jobid)
+	response, err := NewRequest(c, "queryAsyncJobResult", params)
+
+	if err != nil {
+		return -1, err
+	}
+
+	log.Printf("response: %v", response)
+	status := response.(QueryAsyncJobResultResponse).Queryasyncjobresultresponse.Jobstatus
+
+	return status, err
 }
 
 func NewRequest(c CloudStackClient, request string, params url.Values) (interface{}, error) {
@@ -247,6 +269,11 @@ func NewRequest(c CloudStackClient, request string, params url.Values) (interfac
 
 	case "destroyVirtualMachine":
 		var decodedResponse DestroyVirtualMachineResponse
+		json.Unmarshal(body, &decodedResponse)
+		return decodedResponse, nil
+
+	case "queryAsyncJobResult":
+		var decodedResponse QueryAsyncJobResultResponse
 		json.Unmarshal(body, &decodedResponse)
 		return decodedResponse, nil
 	}

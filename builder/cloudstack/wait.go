@@ -8,7 +8,7 @@ import (
 
 // waitForAsyncJob simply blocks until the the asynchronous job has
 // executed or has timed out.
-func waitForAsyncJob(jobId string, client *CloudStackClient, timeout time.Duration) error {
+func WaitForAsyncJob(jobId string, client *CloudStackClient, timeout time.Duration) error {
 	done := make(chan struct{})
 	defer close(done)
 
@@ -19,14 +19,14 @@ func waitForAsyncJob(jobId string, client *CloudStackClient, timeout time.Durati
 			attempts += 1
 
 			log.Printf("Checking async job status... (attempt: %d)", attempts)
-			state, err := client.QueryAsyncJobResult(jobId)
+			status, err := client.QueryAsyncJobResult(jobId)
 			if err != nil {
 				result <- err
 				return
 			}
 
 			// check what the real state will be.
-			if state == "done" {
+			if status == 1 {
 				result <- nil
 				return
 			}

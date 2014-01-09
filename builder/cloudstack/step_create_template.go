@@ -31,7 +31,7 @@ func (s *stepCreateTemplate) Run(state multistep.StateBag) multistep.StepAction 
 
 	ui.Say("Waiting for template to be saved...")
 	// Wait for async job?
-	err = waitForAsyncJob(jobId, client, c.stateTimeout)
+	err = WaitForAsyncJob(jobId, client, c.stateTimeout)
 	if err != nil {
 		err := fmt.Errorf("Error waiting for template to complete: %s", err)
 		state.Put("error", err)

@@ -18,7 +18,7 @@ func (s *stepVirtualMachineState) Run(state multistep.StateBag) multistep.StepAc
 
 	// fetch jobId somehow
 	jobId := "jobId"
-	err := waitForAsyncJob(jobId, client, c.stateTimeout)
+	err := WaitForAsyncJob(jobId, client, c.stateTimeout)
 	if err != nil {
 		err := fmt.Errorf("Error waiting for virtual machine to become active: %s", err)
 		state.Put("error", err)
