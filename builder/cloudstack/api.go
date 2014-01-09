@@ -64,21 +64,21 @@ type Nic struct {
 }
 
 type Virtualmachine struct {
-	Account     string  `json:"account"`
-	Cpunumber   float64 `json:"cpunumber"`
-	Cpuspeed    float64 `json:"cpuspeed"`
-	Created     string  `json:"created"`
-	Displayname string  `json:"displayname"`
-	Domain      string  `json:"domain"`
-	Domainid    string  `json:"domainid"`
-	Guestosid   string  `json:"guestosid"`
-	Haenable    bool    `json:"haenable"`
-	Hypervisor  string  `json:"hypervisor"`
-	ID          string  `json:"id"`
-	Keypair     string  `json:"keypair"`
-	Memory      float64 `json:"memory"`
-	Name        string  `json:"name"`
-	Nic         []Nic   `json:"nic"`
+	Account             string        `json:"account"`
+	Cpunumber           float64       `json:"cpunumber"`
+	Cpuspeed            float64       `json:"cpuspeed"`
+	Created             string        `json:"created"`
+	Displayname         string        `json:"displayname"`
+	Domain              string        `json:"domain"`
+	Domainid            string        `json:"domainid"`
+	Guestosid           string        `json:"guestosid"`
+	Haenable            bool          `json:"haenable"`
+	Hypervisor          string        `json:"hypervisor"`
+	ID                  string        `json:"id"`
+	Keypair             string        `json:"keypair"`
+	Memory              float64       `json:"memory"`
+	Name                string        `json:"name"`
+	Nic                 []Nic         `json:"nic"`
 	Passwordenabled     bool          `json:"passwordenabled"`
 	Rootdeviceid        float64       `json:"rootdeviceid"`
 	Rootdevicetype      string        `json:"rootdevicetype"`
@@ -96,7 +96,7 @@ type Virtualmachine struct {
 
 type ListVirtualMachinesResponse struct {
 	Listvirtualmachinesresponse struct {
-		Count          float64 `json:"count"`
+		Count          float64          `json:"count"`
 		Virtualmachine []Virtualmachine `json:"virtualmachine"`
 	} `json:"listvirtualmachinesresponse"`
 }
