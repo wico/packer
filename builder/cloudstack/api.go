@@ -51,9 +51,9 @@ type QueryAsyncJobResultResponse struct {
 		Cmd           string  `json:"cmd"`
 		Created       string  `json:"created"`
 		Jobid         string  `json:"jobid"`
-		Jobprocstatus float64  `json:"jobprocstatus"`
-		Jobresultcode float64  `json:"jobresultcode"`
-		Jobstatus     float64  `json:"jobstatus"`
+		Jobprocstatus float64 `json:"jobprocstatus"`
+		Jobresultcode float64 `json:"jobresultcode"`
+		Jobstatus     float64 `json:"jobstatus"`
 		Userid        string  `json:"userid"`
 	} `json:"queryasyncjobresultresponse"`
 }
