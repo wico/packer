@@ -45,6 +45,62 @@ type DestroyVirtualMachineResponse struct {
 	} `json:"destroyvirtualmachineresponse"`
 }
 
+type StopVirtualMachineResponse struct {
+	Stopvirtualmachineresponse struct {
+		Jobid string `json:"jobid"`
+	} `json:"stopvirtualmachineresponse"`
+}
+
+type Nic struct {
+	Gateway     string `json:"gateway"`
+	ID          string `json:"id"`
+	Ipaddress   string `json:"ipaddress"`
+	Isdefault   bool   `json:"isdefault"`
+	Macaddress  string `json:"macaddress"`
+	Netmask     string `json:"netmask"`
+	Networkid   string `json:"networkid"`
+	Traffictype string `json:"traffictype"`
+	Type        string `json:"type"`
+}
+
+type Virtualmachine struct {
+	Account     string  `json:"account"`
+	Cpunumber   float64 `json:"cpunumber"`
+	Cpuspeed    float64 `json:"cpuspeed"`
+	Created     string  `json:"created"`
+	Displayname string  `json:"displayname"`
+	Domain      string  `json:"domain"`
+	Domainid    string  `json:"domainid"`
+	Guestosid   string  `json:"guestosid"`
+	Haenable    bool    `json:"haenable"`
+	Hypervisor  string  `json:"hypervisor"`
+	ID          string  `json:"id"`
+	Keypair     string  `json:"keypair"`
+	Memory      float64 `json:"memory"`
+	Name        string  `json:"name"`
+	Nic         []Nic   `json:"nic"`
+	Passwordenabled     bool          `json:"passwordenabled"`
+	Rootdeviceid        float64       `json:"rootdeviceid"`
+	Rootdevicetype      string        `json:"rootdevicetype"`
+	Securitygroup       []interface{} `json:"securitygroup"`
+	Serviceofferingid   string        `json:"serviceofferingid"`
+	Serviceofferingname string        `json:"serviceofferingname"`
+	State               string        `json:"state"`
+	Tags                []interface{} `json:"tags"`
+	Templatedisplaytext string        `json:"templatedisplaytext"`
+	Templateid          string        `json:"templateid"`
+	Templatename        string        `json:"templatename"`
+	Zoneid              string        `json:"zoneid"`
+	Zonename            string        `json:"zonename"`
+}
+
+type ListVirtualMachinesResponse struct {
+	Listvirtualmachinesresponse struct {
+		Count          float64 `json:"count"`
+		Virtualmachine []Virtualmachine `json:"virtualmachine"`
+	} `json:"listvirtualmachinesresponse"`
+}
+
 type QueryAsyncJobResultResponse struct {
 	Queryasyncjobresultresponse struct {
 		Accountid     string  `json:"accountid"`
@@ -63,7 +119,7 @@ type Template struct {
 	Name string
 }
 
-type TemplatesResp struct {
+type TemplatesResponse struct {
 	Templates []Template
 }
 
@@ -106,12 +162,16 @@ func (c CloudStackClient) CreateSSHKeyPair(name string) (string, error) {
 	return privatekey, nil
 }
 
-// Deletes an SSH key
-func (c CloudStackClient) DeleteSSHKeyPair(name string) (uint, error) {
+// Deletes an SSH key pair
+func (c CloudStackClient) DeleteSSHKeyPair(name string) (string, error) {
 	params := url.Values{}
 	params.Set("name", name)
-	_, err := NewRequest(c, "deleteSSHKeyPair", params)
-	return 0, err
+	response, err := NewRequest(c, "deleteSSHKeyPair", params)
+	if err != nil {
+		return "", err
+	}
+	success := response.(DeleteSshKeyPairResponse).Deletesshkeypairresponse.Success
+	return success, err
 }
 
 // Deploys a Virtual Machine and returns it's id
@@ -135,6 +195,18 @@ func (c CloudStackClient) DeployVirtualMachine(serviceofferingid string, templat
 	return vmid, jobid, nil
 }
 
+// Stops a Virtual Machine
+func (c CloudStackClient) StopVirtualMachine(id string) (string, error) {
+	params := url.Values{}
+	params.Set("id", id)
+	response, err := NewRequest(c, "stopVirtualMachine", params)
+	if err != nil {
+		return "", err
+	}
+	jobid := response.(StopVirtualMachineResponse).Stopvirtualmachineresponse.Jobid
+	return jobid, err
+}
+
 // Destroys a Virtual Machine
 func (c CloudStackClient) DestroyVirtualMachine(id string) (string, error) {
 	params := url.Values{}
@@ -145,14 +217,6 @@ func (c CloudStackClient) DestroyVirtualMachine(id string) (string, error) {
 	}
 	jobid := response.(DestroyVirtualMachineResponse).Destroyvirtualmachineresponse.Jobid
 	return jobid, nil
-}
-
-// Stops a Virtual Machine
-func (c CloudStackClient) StopVirtualMachine(id string) (string, error) {
-	params := url.Values{}
-	params.Set("id", id)
-	_, err := NewRequest(c, "stopVirtualMachine", params)
-	return "jobId", err
 }
 
 // Creates a Template of a Virtual Machine by it's ID
@@ -183,13 +247,25 @@ func (c CloudStackClient) DeleteTemplate(id string) (uint, error) {
 	return 0, err
 }
 
-// Returns CloudStack string representation of status "off" "new" "active" etc.
+// Returns CloudStack string representation of the Virtual Machine state
 func (c CloudStackClient) VirtualMachineState(id string) (string, string, error) {
 	params := url.Values{}
 	params.Set("id", id)
-	_, err := NewRequest(c, "listVirtualMachines", params)
-	// unpack state from json, return IP somehow as well
-	return "1.2.3.4", "", err
+	response, err := NewRequest(c, "listVirtualMachines", params)
+	if err != nil {
+		return "", "", err
+	}
+
+	count := response.(ListVirtualMachinesResponse).Listvirtualmachinesresponse.Count
+	if count != 1 {
+		// TODO: Return some like no virtual machines found.
+		return "", "", err
+	}
+
+	state := response.(ListVirtualMachinesResponse).Listvirtualmachinesresponse.Virtualmachine[0].State
+	ip := response.(ListVirtualMachinesResponse).Listvirtualmachinesresponse.Virtualmachine[0].Nic[0].Ipaddress
+
+	return ip, state, err
 }
 
 // Query CloudStack for the state of a scheduled job
@@ -230,7 +306,7 @@ func NewRequest(c CloudStackClient, request string, params url.Values) (interfac
 	// Create the final URL before we issue the request
 	url := c.BaseURL + "?" + s + "&signature=" + signature
 
-	log.Printf("Calling %s ", url)
+	//log.Printf("Calling %s ", url)
 
 	resp, err := client.Get(url)
 	if err != nil {
@@ -269,6 +345,16 @@ func NewRequest(c CloudStackClient, request string, params url.Values) (interfac
 
 	case "destroyVirtualMachine":
 		var decodedResponse DestroyVirtualMachineResponse
+		json.Unmarshal(body, &decodedResponse)
+		return decodedResponse, nil
+
+	case "stopVirtualMachine":
+		var decodedResponse StopVirtualMachineResponse
+		json.Unmarshal(body, &decodedResponse)
+		return decodedResponse, nil
+
+	case "listVirtualMachines":
+		var decodedResponse ListVirtualMachinesResponse
 		json.Unmarshal(body, &decodedResponse)
 		return decodedResponse, nil
 

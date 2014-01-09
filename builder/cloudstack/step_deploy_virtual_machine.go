@@ -5,6 +5,7 @@ import (
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/common/uuid"
 	"github.com/mitchellh/packer/packer"
+	"time"
 )
 
 type stepDeployVirtualMachine struct {
@@ -23,13 +24,16 @@ func (s *stepDeployVirtualMachine) Run(state multistep.StateBag) multistep.StepA
 	displayName := fmt.Sprintf("packer-%s", uuid.TimeOrderedUUID())
 
 	// Create the virtual machine based on configuration
-	vmid, _, err := client.DeployVirtualMachine(c.ServiceOfferingId, c.TemplateId, c.ZoneId, c.NetworkIds, sshKeyName, displayName, "")
+	vmid, jobid, err := client.DeployVirtualMachine(c.ServiceOfferingId, c.TemplateId, c.ZoneId, c.NetworkIds, sshKeyName, displayName, "")
 	if err != nil {
 		err := fmt.Errorf("Error deploying Virtual Machine: %s", err)
 		state.Put("error", err)
 		ui.Error(err.Error())
 		return multistep.ActionHalt
 	}
+
+	WaitForAsyncJob(jobid, client, 2*time.Minute)
+	// TODO: add error handlind here
 
 	// We use this in cleanup
 	s.id = vmid
@@ -52,9 +56,12 @@ func (s *stepDeployVirtualMachine) Cleanup(state multistep.StateBag) {
 	// Destroy the droplet we just created
 	ui.Say("Destroying virtual machine...")
 
-	_, err := client.DestroyVirtualMachine(s.id)
+	jobid, err := client.DestroyVirtualMachine(s.id)
 	if err != nil {
 		ui.Error(fmt.Sprintf(
 			"Error destroying droplet. Please destroy it manually."))
 	}
+
+	WaitForAsyncJob(jobid, client, 2*time.Minute)
+	// TODO: add error handlind here
 }

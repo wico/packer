@@ -19,7 +19,7 @@ func (s *stepCreateSSHKeyPair) Run(state multistep.StateBag) multistep.StepActio
 
 	ui.Say("Creating temporary ssh key for virtual machine...")
 
-	// The name of the public key on DO
+	// The name of the public key on CloudStack
 	name := fmt.Sprintf("packer-%s", uuid.TimeOrderedUUID())
 
 	// Create the key!
