@@ -23,26 +23,26 @@ const BuilderId = "mindjiver.cloudstack"
 type config struct {
 	common.PackerConfig `mapstructure:",squash"`
 
-	APIURL   string `mapstructure:"api_url"`
-	APIKey   string `mapstructure:"api_key"`
-	Secret   string `mapstructure:"secret"`
+	APIURL string `mapstructure:"api_url"`
+	APIKey string `mapstructure:"api_key"`
+	Secret string `mapstructure:"secret"`
 
 	RawSSHTimeout   string `mapstructure:"ssh_timeout"`
 	RawStateTimeout string `mapstructure:"state_timeout"`
 
-	SSHUsername  string `mapstructure:"ssh_username"`
-	SSHPort      uint   `mapstructure:"ssh_port"`
+	SSHUsername string `mapstructure:"ssh_username"`
+	SSHPort     uint   `mapstructure:"ssh_port"`
 
 	// These are unexported since they're set by other fields
 	// being set.
 	sshTimeout   time.Duration
 	stateTimeout time.Duration
-	
+
 	// Neccessary settings for CloudStack to be able to spin up
 	// Virtual Machine.
-	ServiceOfferingId string `mapstructure:"service_offering_id"`
-	TemplateId        string `mapstructure:"template_id"`
-	ZoneId            string `mapstructure:"zone_id"`
+	ServiceOfferingId string   `mapstructure:"service_offering_id"`
+	TemplateId        string   `mapstructure:"template_id"`
+	ZoneId            string   `mapstructure:"zone_id"`
 	NetworkIds        []string `mapstructure:"network_ids"`
 
 	// Tell CloudStack under which name, description to save the
@@ -111,7 +111,7 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 	}
 
 	if b.config.TemplateDisplayText == "" {
-		b.config.TemplateDisplayText= "Packer Generated Template"
+		b.config.TemplateDisplayText = "Packer Generated Template"
 	}
 
 	if b.config.TemplateOSId == "" {

@@ -14,7 +14,7 @@ func (s *stepCreateTemplate) Run(state multistep.StateBag) multistep.StepAction 
 	client := state.Get("client").(*CloudStackClient)
 	ui := state.Get("ui").(packer.Ui)
 	c := state.Get("config").(config)
-//	id := state.Get("virtual_machine_id")
+	//	id := state.Get("virtual_machine_id")
 
 	ui.Say(fmt.Sprintf("Creating template: %v", c.TemplateName))
 

@@ -7,10 +7,10 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
-	"log"
 	"errors"
+	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -46,8 +46,8 @@ type DestroyVirtualMachineResponse struct {
 }
 
 type Template struct {
-	Id           string
-	Name         string
+	Id   string
+	Name string
 }
 
 type TemplatesResp struct {
@@ -224,13 +224,13 @@ func NewRequest(c CloudStackClient, request string, params url.Values) (interfac
 	log.Printf("response from cloudstack: %d - %s", resp.StatusCode, body)
 	if resp.StatusCode != 200 {
 		err = errors.New(fmt.Sprintf("Received HTTP client/server error from CloudStack: %d", resp.StatusCode))
-		return nil,  err
+		return nil, err
 	}
 
 	switch request {
 	default:
 		log.Printf("Unknown request %s", request)
-	case "createSSHKeyPair" :
+	case "createSSHKeyPair":
 		var decodedResponse CreateSshKeyPairResponse
 		json.Unmarshal(body, &decodedResponse)
 		return decodedResponse, nil

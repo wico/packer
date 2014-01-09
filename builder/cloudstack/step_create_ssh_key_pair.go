@@ -9,7 +9,7 @@ import (
 )
 
 type stepCreateSSHKeyPair struct {
-	keyName string
+	keyName    string
 	privateKey string
 }
 
