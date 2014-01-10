@@ -2,15 +2,16 @@ package cloudstack
 
 import (
 	"fmt"
+	"log"
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/packer"
-	"log"
+	"github.com/mindjiver/gopherstack"
 )
 
 type stepStopVirtualMachine struct{}
 
 func (s *stepStopVirtualMachine) Run(state multistep.StateBag) multistep.StepAction {
-	client := state.Get("client").(*CloudStackClient)
+	client := state.Get("client").(*gopherstack.CloudStackClient)
 	c := state.Get("config").(config)
 	ui := state.Get("ui").(packer.Ui)
 	id := state.Get("virtual_machine_id").(string)
@@ -39,7 +40,7 @@ func (s *stepStopVirtualMachine) Run(state multistep.StateBag) multistep.StepAct
 	}
 
 	log.Println("Waiting for stop event to complete...")
-	err = WaitForAsyncJob(jobId, client, c.stateTimeout)
+	err = client.WaitForAsyncJob(jobId, c.stateTimeout)
 	if err != nil {
 		state.Put("error", err)
 		ui.Error(err.Error())

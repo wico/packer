@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/packer"
+	"github.com/mindjiver/gopherstack"
 	"log"
 )
 
 type stepCreateTemplate struct{}
 
 func (s *stepCreateTemplate) Run(state multistep.StateBag) multistep.StepAction {
-	client := state.Get("client").(*CloudStackClient)
+	client := state.Get("client").(*gopherstack.CloudStackClient)
 	ui := state.Get("ui").(packer.Ui)
 	c := state.Get("config").(config)
 	//	id := state.Get("virtual_machine_id")
@@ -31,7 +32,7 @@ func (s *stepCreateTemplate) Run(state multistep.StateBag) multistep.StepAction 
 
 	ui.Say("Waiting for template to be saved...")
 	// Wait for async job?
-	err = WaitForAsyncJob(jobId, client, c.stateTimeout)
+	err = client.WaitForAsyncJob(jobId, c.stateTimeout)
 	if err != nil {
 		err := fmt.Errorf("Error waiting for template to complete: %s", err)
 		state.Put("error", err)

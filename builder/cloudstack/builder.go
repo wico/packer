@@ -9,6 +9,7 @@ import (
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/common"
 	"github.com/mitchellh/packer/packer"
+	"github.com/mindjiver/gopherstack"
 	"log"
 	"os"
 	"time"
@@ -202,7 +203,7 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 
 func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packer.Artifact, error) {
 	// Initialize the CloudStack API client
-	client := CloudStackClient{}.New(b.config.APIURL, b.config.APIKey, b.config.Secret)
+	client := gopherstack.CloudStackClient{}.New(b.config.APIURL, b.config.APIKey, b.config.Secret)
 
 	// Set up the state
 	state := new(multistep.BasicStateBag)

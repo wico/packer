@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/packer"
+	"github.com/mindjiver/gopherstack"
 )
 
 type stepVirtualMachineState struct{}
 
 func (s *stepVirtualMachineState) Run(state multistep.StateBag) multistep.StepAction {
-	client := state.Get("client").(*CloudStackClient)
+	client := state.Get("client").(*gopherstack.CloudStackClient)
 	ui := state.Get("ui").(packer.Ui)
 	c := state.Get("config").(config)
 	id := state.Get("virtual_machine_id").(string)
@@ -18,7 +19,7 @@ func (s *stepVirtualMachineState) Run(state multistep.StateBag) multistep.StepAc
 
 	// fetch jobId somehow
 	jobId := "jobId"
-	err := WaitForAsyncJob(jobId, client, c.stateTimeout)
+	err := client.WaitForAsyncJob(jobId, c.stateTimeout)
 	if err != nil {
 		err := fmt.Errorf("Error waiting for virtual machine to become active: %s", err)
 		state.Put("error", err)

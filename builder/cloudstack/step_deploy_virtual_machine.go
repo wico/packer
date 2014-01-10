@@ -5,6 +5,7 @@ import (
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/common/uuid"
 	"github.com/mitchellh/packer/packer"
+	"github.com/mindjiver/gopherstack"
 	"time"
 )
 
@@ -13,7 +14,7 @@ type stepDeployVirtualMachine struct {
 }
 
 func (s *stepDeployVirtualMachine) Run(state multistep.StateBag) multistep.StepAction {
-	client := state.Get("client").(*CloudStackClient)
+	client := state.Get("client").(*gopherstack.CloudStackClient)
 	ui := state.Get("ui").(packer.Ui)
 	c := state.Get("config").(config)
 	sshKeyName := state.Get("ssh_key_name").(string)
@@ -24,7 +25,7 @@ func (s *stepDeployVirtualMachine) Run(state multistep.StateBag) multistep.StepA
 	displayName := fmt.Sprintf("packer-%s", uuid.TimeOrderedUUID())
 
 	// Create the virtual machine based on configuration
-	vmid, jobid, err := client.DeployVirtualMachine(c.ServiceOfferingId, c.TemplateId, c.ZoneId, c.NetworkIds, sshKeyName, displayName, "")
+	vmid, jobid, err := client.DeployVirtualMachine(c.ServiceOfferingId, c.TemplateId, c.ZoneId, c.NetworkIds, sshKeyName, displayName, "", "")
 	if err != nil {
 		err := fmt.Errorf("Error deploying Virtual Machine: %s", err)
 		state.Put("error", err)
@@ -32,7 +33,7 @@ func (s *stepDeployVirtualMachine) Run(state multistep.StateBag) multistep.StepA
 		return multistep.ActionHalt
 	}
 
-	WaitForAsyncJob(jobid, client, 2*time.Minute)
+	client.WaitForAsyncJob(jobid, 2*time.Minute)
 	// TODO: add error handlind here
 
 	// We use this in cleanup
@@ -50,7 +51,7 @@ func (s *stepDeployVirtualMachine) Cleanup(state multistep.StateBag) {
 		return
 	}
 
-	client := state.Get("client").(*CloudStackClient)
+	client := state.Get("client").(*gopherstack.CloudStackClient)
 	ui := state.Get("ui").(packer.Ui)
 
 	// Destroy the droplet we just created
@@ -62,6 +63,6 @@ func (s *stepDeployVirtualMachine) Cleanup(state multistep.StateBag) {
 			"Error destroying droplet. Please destroy it manually."))
 	}
 
-	WaitForAsyncJob(jobid, client, 2*time.Minute)
+	client.WaitForAsyncJob(jobid, 2*time.Minute)
 	// TODO: add error handlind here
 }

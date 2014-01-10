@@ -3,6 +3,7 @@ package cloudstack
 import (
 	"fmt"
 	"log"
+	"github.com/mindjiver/gopherstack"
 )
 
 type Artifact struct {
@@ -13,7 +14,7 @@ type Artifact struct {
 	templateId string
 
 	// The client for making API calls
-	client *CloudStackClient
+	client *gopherstack.CloudStackClient
 }
 
 func (*Artifact) BuilderId() string {

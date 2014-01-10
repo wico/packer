@@ -5,6 +5,7 @@ import (
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/common/uuid"
 	"github.com/mitchellh/packer/packer"
+	"github.com/mindjiver/gopherstack"
 	"log"
 )
 
@@ -14,7 +15,7 @@ type stepCreateSSHKeyPair struct {
 }
 
 func (s *stepCreateSSHKeyPair) Run(state multistep.StateBag) multistep.StepAction {
-	client := state.Get("client").(*CloudStackClient)
+	client := state.Get("client").(*gopherstack.CloudStackClient)
 	ui := state.Get("ui").(packer.Ui)
 
 	ui.Say("Creating temporary ssh key for virtual machine...")
@@ -50,7 +51,7 @@ func (s *stepCreateSSHKeyPair) Cleanup(state multistep.StateBag) {
 		return
 	}
 
-	client := state.Get("client").(*CloudStackClient)
+	client := state.Get("client").(*gopherstack.CloudStackClient)
 	ui := state.Get("ui").(packer.Ui)
 
 	ui.Say("Deleting temporary ssh key...")
