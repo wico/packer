@@ -174,8 +174,23 @@ func (c CloudStackClient) DeleteSSHKeyPair(name string) (string, error) {
 	return success, err
 }
 
+// List the available CloudStack projects
+func (c CloudStackClient) ListProjects(name string) (string, error) {
+	params := url.Values{}
+
+	if name != "" {
+		params.Set("name", name)
+	}
+	response, err := NewRequest(c, "listProjects", params)
+	if err != nil {
+		return "", err
+	}
+
+	return "", err
+}
+
 // Deploys a Virtual Machine and returns it's id
-func (c CloudStackClient) DeployVirtualMachine(serviceofferingid string, templateid string, zoneid string, networkids []string, keypair string, displayname string, diskoffering string) (string, string, error) {
+func (c CloudStackClient) DeployVirtualMachine(serviceofferingid string, templateid string, zoneid string, networkids []string, keypair string, displayname string, diskoffering string, projectid string) (string, string, error) {
 	params := url.Values{}
 	params.Set("serviceofferingid", serviceofferingid)
 	params.Set("templateid", templateid)
@@ -183,6 +198,9 @@ func (c CloudStackClient) DeployVirtualMachine(serviceofferingid string, templat
 	params.Set("networkids", strings.Join(networkids, ","))
 	params.Set("keypair", keypair)
 	params.Set("displayname", displayname)
+	if projectid != "" {
+		params.Set("projectid", projectid)
+	}
 	if diskoffering != "" {
 		params.Set("diskoffering", diskoffering)
 	}
