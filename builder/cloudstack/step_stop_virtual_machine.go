@@ -16,7 +16,7 @@ func (s *stepStopVirtualMachine) Run(state multistep.StateBag) multistep.StepAct
 	ui := state.Get("ui").(packer.Ui)
 	id := state.Get("virtual_machine_id").(string)
 
-	_, currentState, _, err := client.ListVirtualMachines(id)
+	_, currentState, err := client.ListVirtualMachines(id)
 	if err != nil {
 		err := fmt.Errorf("Error checking virtual machine state: %s", err)
 		state.Put("error", err)
