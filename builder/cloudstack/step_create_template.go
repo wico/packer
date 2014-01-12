@@ -47,7 +47,7 @@ func (s *stepCreateTemplate) Run(state multistep.StateBag) multistep.StepAction 
 	}
 
 	log.Printf("Looking up template ID for template: %s", c.TemplateName)
-	templates, err := client.ListTemplates(c.TemplateName)
+	template, templateId, err := client.ListTemplates(c.TemplateName, "self")
 	if err != nil {
 		err := fmt.Errorf("Error looking up template ID: %s", err)
 		state.Put("error", err)
@@ -55,12 +55,15 @@ func (s *stepCreateTemplate) Run(state multistep.StateBag) multistep.StepAction 
 		return multistep.ActionHalt
 	}
 
-	if templates == nil {
+	if template != c.TemplateName {
 		err := errors.New("Couldn't find template created. Bug?")
 		state.Put("error", err)
 		ui.Error(err.Error())
 		return multistep.ActionHalt
 	}
+
+	state.Put("template_name", template)
+	state.Put("template_id", templateId)
 
 	return multistep.ActionContinue
 }
