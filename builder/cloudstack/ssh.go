@@ -15,7 +15,7 @@ func sshAddress(state multistep.StateBag) (string, error) {
 
 func sshConfig(state multistep.StateBag) (*gossh.ClientConfig, error) {
 	config := state.Get("config").(config)
-	privateKey := state.Get("privateKey").(string)
+	privateKey := state.Get("ssh_private_key").(string)
 
 	keyring := new(ssh.SimpleKeychain)
 	if err := keyring.AddPEMKey(privateKey); err != nil {

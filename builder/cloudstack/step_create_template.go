@@ -3,9 +3,9 @@ package cloudstack
 import (
 	"errors"
 	"fmt"
+	"github.com/mindjiver/gopherstack"
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/packer"
-	"github.com/mindjiver/gopherstack"
 	"log"
 )
 

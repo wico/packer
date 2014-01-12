@@ -2,9 +2,10 @@ package cloudstack
 
 import (
 	"fmt"
+	"github.com/mindjiver/gopherstack"
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/packer"
-	"github.com/mindjiver/gopherstack"
+	"time"
 )
 
 type stepVirtualMachineState struct{}
@@ -12,14 +13,11 @@ type stepVirtualMachineState struct{}
 func (s *stepVirtualMachineState) Run(state multistep.StateBag) multistep.StepAction {
 	client := state.Get("client").(*gopherstack.CloudStackClient)
 	ui := state.Get("ui").(packer.Ui)
-	c := state.Get("config").(config)
 	id := state.Get("virtual_machine_id").(string)
 
 	ui.Say("Waiting for virtual machine to become active...")
 
-	// fetch jobId somehow
-	jobId := "jobId"
-	err := client.WaitForAsyncJob(jobId, c.stateTimeout)
+	err := client.WaitForVirtualMachineState(id, "Running", 2*time.Minute)
 	if err != nil {
 		err := fmt.Errorf("Error waiting for virtual machine to become active: %s", err)
 		state.Put("error", err)
@@ -30,12 +28,11 @@ func (s *stepVirtualMachineState) Run(state multistep.StateBag) multistep.StepAc
 	// Set the IP on the state for later
 	ip, _, err := client.VirtualMachineState(id)
 	if err != nil {
-		err := fmt.Errorf("Error retrieving virtual machine IP: %s", err)
+		err := fmt.Errorf("Error retrieving virtual machine ID: %s", err)
 		state.Put("error", err)
 		ui.Error(err.Error())
 		return multistep.ActionHalt
 	}
-
 	state.Put("virtual_machine_ip", ip)
 
 	return multistep.ActionContinue

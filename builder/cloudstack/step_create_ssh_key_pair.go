@@ -2,11 +2,13 @@ package cloudstack
 
 import (
 	"fmt"
+	"github.com/mindjiver/gopherstack"
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/common/uuid"
 	"github.com/mitchellh/packer/packer"
-	"github.com/mindjiver/gopherstack"
+	"io/ioutil"
 	"log"
+	"os"
 )
 
 type stepCreateSSHKeyPair struct {
@@ -17,8 +19,31 @@ type stepCreateSSHKeyPair struct {
 func (s *stepCreateSSHKeyPair) Run(state multistep.StateBag) multistep.StepAction {
 	client := state.Get("client").(*gopherstack.CloudStackClient)
 	ui := state.Get("ui").(packer.Ui)
+	c := state.Get("config").(config)
 
-	ui.Say("Creating temporary ssh key for virtual machine...")
+	// If we already have a private key for a pre loaded public
+	// key on the base image we load that instead of creating a
+	// SSH key pair.
+	if c.SSHKeyPath != "" {
+		ui.Say("Reading in SSH private key from local disk")
+
+		f, err := os.Open(c.SSHKeyPath)
+		if err != nil {
+			return multistep.ActionHalt
+		}
+		defer f.Close()
+
+		keyBytes, err := ioutil.ReadAll(f)
+		if err != nil {
+			return multistep.ActionHalt
+		}
+
+		state.Put("ssh_private_key", string(keyBytes))
+		state.Put("ssh_key_name", "")
+		return multistep.ActionContinue
+	}
+
+	ui.Say("Creating temporary SSH key for virtual machine...")
 
 	// The name of the public key on CloudStack
 	name := fmt.Sprintf("packer-%s", uuid.TimeOrderedUUID())

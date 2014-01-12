@@ -2,10 +2,10 @@ package cloudstack
 
 import (
 	"fmt"
-	"log"
+	"github.com/mindjiver/gopherstack"
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/packer"
-	"github.com/mindjiver/gopherstack"
+	"log"
 )
 
 type stepStopVirtualMachine struct{}
@@ -16,7 +16,7 @@ func (s *stepStopVirtualMachine) Run(state multistep.StateBag) multistep.StepAct
 	ui := state.Get("ui").(packer.Ui)
 	id := state.Get("virtual_machine_id").(string)
 
-	_, status, err := client.VirtualMachineState(id)
+	_, currentState, err := client.VirtualMachineState(id)
 	if err != nil {
 		err := fmt.Errorf("Error checking virtual machine state: %s", err)
 		state.Put("error", err)
@@ -24,7 +24,7 @@ func (s *stepStopVirtualMachine) Run(state multistep.StateBag) multistep.StepAct
 		return multistep.ActionHalt
 	}
 
-	if status == "stopped" {
+	if currentState == "Stopped" {
 		// Virtual Machine is already stopped, don't do anything
 		return multistep.ActionContinue
 	}

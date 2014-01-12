@@ -6,10 +6,10 @@ package cloudstack
 import (
 	"errors"
 	"fmt"
+	"github.com/mindjiver/gopherstack"
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/common"
 	"github.com/mitchellh/packer/packer"
-	"github.com/mindjiver/gopherstack"
 	"log"
 	"os"
 	"time"
@@ -113,7 +113,7 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 	}
 
 	if b.config.TemplateDisplayText == "" {
-		b.config.TemplateDisplayText = "Packer Generated Template"
+		b.config.TemplateDisplayText = "Packer_Generated_Template"
 	}
 
 	if b.config.TemplateOSId == "" {
@@ -128,19 +128,19 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 	}
 
 	if b.config.SSHPort == 0 {
-		// Default to port 22 per DO default
+		// Default to port 22
 		b.config.SSHPort = 22
 	}
 
 	if b.config.RawSSHTimeout == "" {
 		// Default to 1 minute timeouts
-		b.config.RawSSHTimeout = "1m"
+		b.config.RawSSHTimeout = "5m"
 	}
 
 	if b.config.RawStateTimeout == "" {
-		// Default to 6 minute timeouts waiting for
-		// desired state. i.e waiting for droplet to become active
-		b.config.RawStateTimeout = "6m"
+		// Default to 5 minute timeouts waiting for
+		// desired state. i.e waiting for virtual machine to become active
+		b.config.RawStateTimeout = "5m"
 	}
 
 	templates := map[string]*string{

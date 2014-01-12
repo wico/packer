@@ -2,10 +2,10 @@ package cloudstack
 
 import (
 	"fmt"
+	"github.com/mindjiver/gopherstack"
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/common/uuid"
 	"github.com/mitchellh/packer/packer"
-	"github.com/mindjiver/gopherstack"
 	"time"
 )
 
@@ -34,14 +34,14 @@ func (s *stepDeployVirtualMachine) Run(state multistep.StateBag) multistep.StepA
 	}
 
 	client.WaitForAsyncJob(jobid, 2*time.Minute)
-	// TODO: add error handlind here
+	// TODO: add error handling here
 
 	// We use this in cleanup
 	s.id = vmid
 
 	// Store the virtual machine id for later use
 	state.Put("virtual_machine_id", vmid)
-
+	//state.Put("root_device_id",
 	return multistep.ActionContinue
 }
 
@@ -64,5 +64,5 @@ func (s *stepDeployVirtualMachine) Cleanup(state multistep.StateBag) {
 	}
 
 	client.WaitForAsyncJob(jobid, 2*time.Minute)
-	// TODO: add error handlind here
+	// TODO: add error handling here
 }

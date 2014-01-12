@@ -2,8 +2,8 @@ package cloudstack
 
 import (
 	"fmt"
-	"log"
 	"github.com/mindjiver/gopherstack"
+	"log"
 )
 
 type Artifact struct {
