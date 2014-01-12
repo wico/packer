@@ -15,14 +15,21 @@ func (s *stepCreateTemplate) Run(state multistep.StateBag) multistep.StepAction 
 	client := state.Get("client").(*gopherstack.CloudStackClient)
 	ui := state.Get("ui").(packer.Ui)
 	c := state.Get("config").(config)
-	//	id := state.Get("virtual_machine_id")
+	vmid := state.Get("virtual_machine_id").(string)
 
 	ui.Say(fmt.Sprintf("Creating template: %v", c.TemplateName))
 
 	// get the volume id for the system volume for Virtual Machine 'id'
-	volumeid := "0"
+	volumeId, err := client.ListVolumes(vmid)
+	if err != nil {
+		err := fmt.Errorf("Error creating template: %s", err)
+		state.Put("error", err)
+		ui.Error(err.Error())
+		return multistep.ActionHalt
+	}
 
-	jobId, err := client.CreateTemplate(c.TemplateDisplayText, c.TemplateName, volumeid, c.TemplateOSId)
+	jobId, err := client.CreateTemplate(c.TemplateDisplayText, c.TemplateName,
+		volumeId, c.TemplateOSId)
 	if err != nil {
 		err := fmt.Errorf("Error creating template: %s", err)
 		state.Put("error", err)
@@ -31,7 +38,6 @@ func (s *stepCreateTemplate) Run(state multistep.StateBag) multistep.StepAction 
 	}
 
 	ui.Say("Waiting for template to be saved...")
-	// Wait for async job?
 	err = client.WaitForAsyncJob(jobId, c.stateTimeout)
 	if err != nil {
 		err := fmt.Errorf("Error waiting for template to complete: %s", err)
@@ -41,7 +47,7 @@ func (s *stepCreateTemplate) Run(state multistep.StateBag) multistep.StepAction 
 	}
 
 	log.Printf("Looking up template ID for template: %s", c.TemplateName)
-	templates, err := client.Templates()
+	templates, err := client.ListTemplates(c.TemplateName)
 	if err != nil {
 		err := fmt.Errorf("Error looking up template ID: %s", err)
 		state.Put("error", err)
@@ -49,25 +55,12 @@ func (s *stepCreateTemplate) Run(state multistep.StateBag) multistep.StepAction 
 		return multistep.ActionHalt
 	}
 
-	var templateId string
-	for _, template := range templates {
-		if template.Name == c.TemplateName {
-			templateId = template.Id
-			break
-		}
-	}
-
-	if templateId == "" {
+	if templates == nil {
 		err := errors.New("Couldn't find template created. Bug?")
 		state.Put("error", err)
 		ui.Error(err.Error())
 		return multistep.ActionHalt
 	}
-
-	log.Printf("Template ID: %d", templateId)
-
-	state.Put("template_id", templateId)
-	state.Put("template_name", c.TemplateName)
 
 	return multistep.ActionContinue
 }

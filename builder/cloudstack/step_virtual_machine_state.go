@@ -26,7 +26,7 @@ func (s *stepVirtualMachineState) Run(state multistep.StateBag) multistep.StepAc
 	}
 
 	// Set the IP on the state for later
-	ip, _, err := client.VirtualMachineState(id)
+	ip, _, _, err := client.ListVirtualMachines(id)
 	if err != nil {
 		err := fmt.Errorf("Error retrieving virtual machine ID: %s", err)
 		state.Put("error", err)
