@@ -40,12 +40,19 @@ type config struct {
 	sshTimeout   time.Duration
 	stateTimeout time.Duration
 
+	HTTPDir     string `mapstructure:"http_directory"`
+	HTTPPortMin uint   `mapstructure:"http_port_min"`
+	HTTPPortMax uint   `mapstructure:"http_port_max"`
+
 	// Neccessary settings for CloudStack to be able to spin up
-	// Virtual Machine.
+	// Virtual Machine eith with template or a ISO.
 	ServiceOfferingId string   `mapstructure:"service_offering_id"`
 	TemplateId        string   `mapstructure:"template_id"`
 	ZoneId            string   `mapstructure:"zone_id"`
 	NetworkIds        []string `mapstructure:"network_ids"`
+	DiskOfferingId    string   `mapstructure:"disk_offering_id"`
+	UserData          string   `mapstructure:"user_data"`
+	Hypervisor        string   `mapstructure:"hypervisor"`
 
 	// Tell CloudStack under which name, description to save the
 	// template.
@@ -91,6 +98,14 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 		b.config.Secret = os.Getenv("CLOUDSTACK_SECRET")
 	}
 
+	if b.config.HTTPPortMin == 0 {
+		b.config.HTTPPortMin = 8000
+	}
+
+	if b.config.HTTPPortMax == 0 {
+		b.config.HTTPPortMax = 9000
+	}
+
 	if b.config.ServiceOfferingId == "" {
 		b.config.ServiceOfferingId = "62fc8ae5-06ac-4021-bed6-90dfdca6b6b5"
 	}
@@ -133,8 +148,8 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 	}
 
 	if b.config.RawSSHTimeout == "" {
-		// Default to 1 minute timeouts
-		b.config.RawSSHTimeout = "5m"
+		// Default to 10 minute timeouts
+		b.config.RawSSHTimeout = "10m"
 	}
 
 	if b.config.RawStateTimeout == "" {
@@ -144,14 +159,15 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 	}
 
 	templates := map[string]*string{
-		"api_url":       &b.config.APIURL,
-		"api_key":       &b.config.APIKey,
-		"secret":        &b.config.Secret,
-		"template_name": &b.config.TemplateName,
-		"ssh_username":  &b.config.SSHUsername,
-		"ssh_timeout":   &b.config.RawSSHTimeout,
-		"ssh_key_path":  &b.config.SSHKeyPath,
-		"state_timeout": &b.config.RawStateTimeout,
+		"api_url":        &b.config.APIURL,
+		"api_key":        &b.config.APIKey,
+		"secret":         &b.config.Secret,
+		"template_name":  &b.config.TemplateName,
+		"ssh_username":   &b.config.SSHUsername,
+		"ssh_timeout":    &b.config.RawSSHTimeout,
+		"ssh_key_path":   &b.config.SSHKeyPath,
+		"state_timeout":  &b.config.RawStateTimeout,
+		"http_directory": &b.config.HTTPDir,
 	}
 
 	for n, ptr := range templates {
@@ -161,6 +177,11 @@ func (b *Builder) Prepare(raws ...interface{}) ([]string, error) {
 			errs = packer.MultiErrorAppend(
 				errs, fmt.Errorf("Error processing %s: %s", n, err))
 		}
+	}
+
+	if b.config.HTTPPortMin > b.config.HTTPPortMax {
+		errs = packer.MultiErrorAppend(
+			errs, errors.New("http_port_min must be less than http_port_max"))
 	}
 
 	// Required configurations that will display errors if not set
@@ -214,13 +235,15 @@ func (b *Builder) Run(ui packer.Ui, hook packer.Hook, cache packer.Cache) (packe
 
 	// Build the steps
 	steps := []multistep.Step{
+		new(stepHTTPServer),
 		new(stepCreateSSHKeyPair),
 		new(stepDeployVirtualMachine),
 		new(stepVirtualMachineState),
+		new(stepDetachIso),
 		&common.StepConnectSSH{
 			SSHAddress:     sshAddress,
 			SSHConfig:      sshConfig,
-			SSHWaitTimeout: 5 * time.Minute,
+			SSHWaitTimeout: b.config.sshTimeout,
 		},
 		new(common.StepProvision),
 		new(stepStopVirtualMachine),
