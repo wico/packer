@@ -33,6 +33,9 @@ func (s *stepHTTPServer) Run(state multistep.StateBag) multistep.StepAction {
 		return multistep.ActionContinue
 	}
 
+	httpIP := ipAddressToListenOn()
+	// check nil or fix a err
+
 	// Find an available TCP port for our HTTP server
 	var httpAddr string
 	portRange := int(config.HTTPPortMax - config.HTTPPortMin)
@@ -46,8 +49,8 @@ func (s *stepHTTPServer) Run(state multistep.StateBag) multistep.StepAction {
 		}
 
 		httpPort = offset + config.HTTPPortMin
-		httpAddr = fmt.Sprintf(":%d", httpPort)
-		log.Printf("Trying port: %d", httpPort)
+		httpAddr = fmt.Sprintf("%v:%d", httpIP.IP, httpPort)
+		log.Printf("Trying %v", httpAddr)
 		s.l, err = net.Listen("tcp", httpAddr)
 		if err == nil {
 			break
@@ -62,7 +65,8 @@ func (s *stepHTTPServer) Run(state multistep.StateBag) multistep.StepAction {
 	go server.Serve(s.l)
 
 	// Save the address into the state so it can be accessed in the future
-	state.Put("http_port", httpPort)
+	state.Put("http_ip", httpIP.IP.String())
+	state.Put("http_port", fmt.Sprintf("%d",httpPort))
 
 	return multistep.ActionContinue
 }
@@ -72,4 +76,16 @@ func (s *stepHTTPServer) Cleanup(multistep.StateBag) {
 		// Close the listener so that the HTTP server stops
 		s.l.Close()
 	}
+}
+
+func ipAddressToListenOn() *net.IPNet {
+	addrs, _ := net.InterfaceAddrs()
+	// TODO: Fix this hack
+	var ip *net.IPNet
+	for _, addr := range addrs {
+		if ipnet, ok := addr.(*net.IPNet); ok && ipnet.IP.IsGlobalUnicast() {
+			ip = ipnet
+		}
+	}
+	return ip
 }

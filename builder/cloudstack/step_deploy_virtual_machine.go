@@ -13,6 +13,11 @@ type stepDeployVirtualMachine struct {
 	id string
 }
 
+type bootCommandTemplateData struct {
+	HTTPIP   string
+	HTTPPort string
+}
+
 func (s *stepDeployVirtualMachine) Run(state multistep.StateBag) multistep.StepAction {
 	client := state.Get("client").(*gopherstack.CloudStackClient)
 	ui := state.Get("ui").(packer.Ui)
@@ -24,10 +29,15 @@ func (s *stepDeployVirtualMachine) Run(state multistep.StateBag) multistep.StepA
 	// Some random virtual machine name as it's temporary
 	displayName := fmt.Sprintf("packer-%s", uuid.TimeOrderedUUID())
 
+	// massage any userData that we wish to send to the virtual
+	// machine to help it boot properly.
+	processTemplatedUserdata(state)
+	userData := state.Get("user_data").(string)
+
 	// Create the virtual machine based on configuration
 	vmid, jobid, err := client.DeployVirtualMachine(c.ServiceOfferingId,
 		c.TemplateId, c.ZoneId, "", c.DiskOfferingId, displayName,
-		c.NetworkIds, sshKeyName, "", c.UserData, c.Hypervisor)
+		c.NetworkIds, sshKeyName, "", userData, c.Hypervisor)
 
 	if err != nil {
 		err := fmt.Errorf("Error deploying Virtual Machine: %s", err)
@@ -68,4 +78,28 @@ func (s *stepDeployVirtualMachine) Cleanup(state multistep.StateBag) {
 
 	client.WaitForAsyncJob(jobid, 2*time.Minute)
 	// TODO: add error handling here
+}
+
+func processTemplatedUserdata(state multistep.StateBag) multistep.StepAction {
+	ui := state.Get("ui").(packer.Ui)
+	c := state.Get("config").(config)
+
+	httpIP := state.Get("http_ip").(string)
+	httpPort := state.Get("http_port").(string)
+
+	tplData := &bootCommandTemplateData{
+		httpIP,
+		httpPort,
+	}
+
+	userData, err := c.tpl.Process(c.UserData, tplData)
+	if err != nil {
+		err := fmt.Errorf("Error preparing boot command: %s", err)
+		state.Put("error", err)
+		ui.Error(err.Error())
+		return multistep.ActionHalt
+	}
+
+	state.Put("user_data", userData)
+	return multistep.ActionContinue
 }
