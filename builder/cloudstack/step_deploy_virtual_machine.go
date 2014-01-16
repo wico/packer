@@ -25,7 +25,10 @@ func (s *stepDeployVirtualMachine) Run(state multistep.StateBag) multistep.StepA
 	displayName := fmt.Sprintf("packer-%s", uuid.TimeOrderedUUID())
 
 	// Create the virtual machine based on configuration
-	vmid, jobid, err := client.DeployVirtualMachine(c.ServiceOfferingId, c.TemplateId, c.ZoneId, c.NetworkIds, sshKeyName, displayName, "", "")
+	vmid, jobid, err := client.DeployVirtualMachine(c.ServiceOfferingId,
+		c.TemplateId, c.ZoneId, "", c.DiskOfferingId, displayName,
+		c.NetworkIds, sshKeyName, "", c.UserData, c.Hypervisor)
+
 	if err != nil {
 		err := fmt.Errorf("Error deploying Virtual Machine: %s", err)
 		state.Put("error", err)
