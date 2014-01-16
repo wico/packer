@@ -40,13 +40,13 @@ func (s *stepDeployVirtualMachine) Run(state multistep.StateBag) multistep.StepA
 		c.NetworkIds, sshKeyName, "", userData, c.Hypervisor)
 
 	if err != nil {
-		err := fmt.Errorf("Error deploying Virtual Machine: %s", err)
+		err := fmt.Errorf("Error deploying virtual machine: %s", err)
 		state.Put("error", err)
 		ui.Error(err.Error())
 		return multistep.ActionHalt
 	}
 
-	client.WaitForAsyncJob(jobid, 2*time.Minute)
+	client.WaitForAsyncJob(jobid, c.stateTimeout)
 	// TODO: add error handling here
 
 	// We use this in cleanup
@@ -54,7 +54,7 @@ func (s *stepDeployVirtualMachine) Run(state multistep.StateBag) multistep.StepA
 
 	// Store the virtual machine id for later use
 	state.Put("virtual_machine_id", vmid)
-	//state.Put("root_device_id",
+
 	return multistep.ActionContinue
 }
 
@@ -67,16 +67,16 @@ func (s *stepDeployVirtualMachine) Cleanup(state multistep.StateBag) {
 	client := state.Get("client").(*gopherstack.CloudStackClient)
 	ui := state.Get("ui").(packer.Ui)
 
-	// Destroy the droplet we just created
+	// Destroy the virtual machine we just created
 	ui.Say("Destroying virtual machine...")
 
 	jobid, err := client.DestroyVirtualMachine(s.id)
 	if err != nil {
 		ui.Error(fmt.Sprintf(
-			"Error destroying droplet. Please destroy it manually."))
+			"Error destroying virtual machine. Please destroy it manually."))
 	}
 
-	client.WaitForAsyncJob(jobid, 2*time.Minute)
+	client.WaitForAsyncJob(jobid, c.stateTimeout)
 	// TODO: add error handling here
 }
 

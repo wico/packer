@@ -16,8 +16,7 @@ func (s *stepDetachIso) Run(state multistep.StateBag) multistep.StepAction {
 	ui := state.Get("ui").(packer.Ui)
 	id := state.Get("virtual_machine_id").(string)
 
-	// Stop the virtual machine
-	ui.Say("Detaching ISO image...")
+	ui.Say("Detaching ISO image from virtual machine...")
 	jobId, err := client.DetachIso(id)
 	if err != nil {
 		err := fmt.Errorf("Error detaching ISO from virtual machine: %s", err)

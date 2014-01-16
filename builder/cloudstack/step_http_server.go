@@ -66,7 +66,7 @@ func (s *stepHTTPServer) Run(state multistep.StateBag) multistep.StepAction {
 
 	// Save the address into the state so it can be accessed in the future
 	state.Put("http_ip", httpIP.IP.String())
-	state.Put("http_port", fmt.Sprintf("%d",httpPort))
+	state.Put("http_port", fmt.Sprintf("%d", httpPort))
 
 	return multistep.ActionContinue
 }

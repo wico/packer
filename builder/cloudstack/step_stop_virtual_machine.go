@@ -30,7 +30,7 @@ func (s *stepStopVirtualMachine) Run(state multistep.StateBag) multistep.StepAct
 	}
 
 	// Stop the virtual machine
-	ui.Say("Stopping Virtual Machine...")
+	ui.Say("Stopping virtual machine...")
 	jobId, err := client.StopVirtualMachine(id)
 	if err != nil {
 		err := fmt.Errorf("Error stopping virtual machine: %s", err)
