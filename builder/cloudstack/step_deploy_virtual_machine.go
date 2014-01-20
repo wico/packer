@@ -6,7 +6,6 @@ import (
 	"github.com/mitchellh/multistep"
 	"github.com/mitchellh/packer/common/uuid"
 	"github.com/mitchellh/packer/packer"
-	"time"
 )
 
 type stepDeployVirtualMachine struct {
@@ -66,6 +65,7 @@ func (s *stepDeployVirtualMachine) Cleanup(state multistep.StateBag) {
 
 	client := state.Get("client").(*gopherstack.CloudStackClient)
 	ui := state.Get("ui").(packer.Ui)
+	c := state.Get("config").(config)
 
 	// Destroy the virtual machine we just created
 	ui.Say("Destroying virtual machine...")
