@@ -16,7 +16,7 @@ func (s *stepStopVirtualMachine) Run(state multistep.StateBag) multistep.StepAct
 	ui := state.Get("ui").(packer.Ui)
 	id := state.Get("virtual_machine_id").(string)
 
-	_, currentState, err := client.ListVirtualMachines(id)
+	response, err := client.ListVirtualMachines(id)
 	if err != nil {
 		err := fmt.Errorf("Error checking virtual machine state: %s", err)
 		state.Put("error", err)
@@ -24,6 +24,9 @@ func (s *stepStopVirtualMachine) Run(state multistep.StateBag) multistep.StepAct
 		return multistep.ActionHalt
 	}
 
+	// As we list the virtual machines with the unique UUID we
+	// know the VM we are after is the first one.
+	currentState := response.Listvirtualmachinesresponse.Virtualmachine[0].State
 	if currentState == "Stopped" {
 		// Virtual Machine is already stopped, don't do anything
 		return multistep.ActionContinue
@@ -31,7 +34,7 @@ func (s *stepStopVirtualMachine) Run(state multistep.StateBag) multistep.StepAct
 
 	// Stop the virtual machine
 	ui.Say("Stopping virtual machine...")
-	jobId, err := client.StopVirtualMachine(id)
+	response2, err := client.StopVirtualMachine(id)
 	if err != nil {
 		err := fmt.Errorf("Error stopping virtual machine: %s", err)
 		state.Put("error", err)
@@ -40,7 +43,8 @@ func (s *stepStopVirtualMachine) Run(state multistep.StateBag) multistep.StepAct
 	}
 
 	log.Println("Waiting for stop event to complete...")
-	err = client.WaitForAsyncJob(jobId, c.stateTimeout)
+	jobid := response2.Stopvirtualmachineresponse.Jobid
+	err = client.WaitForAsyncJob(jobid, c.stateTimeout)
 	if err != nil {
 		state.Put("error", err)
 		ui.Error(err.Error())

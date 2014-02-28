@@ -49,7 +49,7 @@ func (s *stepCreateSSHKeyPair) Run(state multistep.StateBag) multistep.StepActio
 	name := fmt.Sprintf("packer-%s", uuid.TimeOrderedUUID())
 
 	// Create the key!
-	privateKey, err := client.CreateSSHKeyPair(name)
+	response, err := client.CreateSSHKeyPair(name)
 	if err != nil {
 		err := fmt.Errorf("Error creating temporary SSH key: %s", err)
 		state.Put("error", err)
@@ -57,15 +57,14 @@ func (s *stepCreateSSHKeyPair) Run(state multistep.StateBag) multistep.StepActio
 		return multistep.ActionHalt
 	}
 
-	// We use this to check cleanup
 	s.keyName = name
-	s.privateKey = privateKey
+	s.privateKey = response.Createsshkeypairresponse.Keypair.Privatekey
 
 	log.Printf("temporary ssh key name: %s", name)
 
 	// Remember some state for the future
 	state.Put("ssh_key_name", name)
-	state.Put("ssh_private_key", privateKey)
+	state.Put("ssh_private_key", s.privateKey)
 
 	return multistep.ActionContinue
 }
@@ -81,7 +80,6 @@ func (s *stepCreateSSHKeyPair) Cleanup(state multistep.StateBag) {
 
 	ui.Say("Deleting temporary ssh key...")
 	_, err := client.DeleteSSHKeyPair(s.keyName)
-
 	if err != nil {
 		log.Printf("Error cleaning up ssh key: %v", err.Error())
 		ui.Error(fmt.Sprintf(

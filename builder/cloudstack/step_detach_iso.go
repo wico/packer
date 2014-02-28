@@ -17,7 +17,7 @@ func (s *stepDetachIso) Run(state multistep.StateBag) multistep.StepAction {
 	id := state.Get("virtual_machine_id").(string)
 
 	ui.Say("Detaching ISO image from virtual machine...")
-	jobId, err := client.DetachIso(id)
+	response, err := client.DetachIso(id)
 	if err != nil {
 		err := fmt.Errorf("Error detaching ISO from virtual machine: %s", err)
 		state.Put("error", err)
@@ -26,7 +26,8 @@ func (s *stepDetachIso) Run(state multistep.StateBag) multistep.StepAction {
 	}
 
 	log.Println("Waiting for detach event to complete...")
-	err = client.WaitForAsyncJob(jobId, c.stateTimeout)
+	jobid := response.Detachisoresponse.Jobid
+	err = client.WaitForAsyncJob(jobid, c.stateTimeout)
 	if err != nil {
 		state.Put("error", err)
 		ui.Error(err.Error())

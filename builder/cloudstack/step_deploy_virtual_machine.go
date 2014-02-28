@@ -28,13 +28,13 @@ func (s *stepDeployVirtualMachine) Run(state multistep.StateBag) multistep.StepA
 	// Some random virtual machine name as it's temporary
 	displayName := fmt.Sprintf("packer-%s", uuid.TimeOrderedUUID())
 
-	// massage any userData that we wish to send to the virtual
+	// Massage any userData that we wish to send to the virtual
 	// machine to help it boot properly.
 	processTemplatedUserdata(state)
 	userData := state.Get("user_data").(string)
 
 	// Create the virtual machine based on configuration
-	vmid, jobid, err := client.DeployVirtualMachine(c.ServiceOfferingId,
+	response, err := client.DeployVirtualMachine(c.ServiceOfferingId,
 		c.TemplateId, c.ZoneId, "", c.DiskOfferingId, displayName,
 		c.NetworkIds, sshKeyName, "", userData, c.Hypervisor)
 
@@ -45,8 +45,10 @@ func (s *stepDeployVirtualMachine) Run(state multistep.StateBag) multistep.StepA
 		return multistep.ActionHalt
 	}
 
+	// Unpack the async jobid and wait for it
+	vmid := response.Deployvirtualmachineresponse.ID
+	jobid := response.Deployvirtualmachineresponse.Jobid
 	client.WaitForAsyncJob(jobid, c.stateTimeout)
-	// TODO: add error handling here
 
 	// We use this in cleanup
 	s.id = vmid
@@ -70,14 +72,13 @@ func (s *stepDeployVirtualMachine) Cleanup(state multistep.StateBag) {
 	// Destroy the virtual machine we just created
 	ui.Say("Destroying virtual machine...")
 
-	jobid, err := client.DestroyVirtualMachine(s.id)
+	response, err := client.DestroyVirtualMachine(s.id)
 	if err != nil {
 		ui.Error(fmt.Sprintf(
 			"Error destroying virtual machine. Please destroy it manually."))
 	}
-
+	jobid := response.Destroyvirtualmachineresponse.Jobid
 	client.WaitForAsyncJob(jobid, c.stateTimeout)
-	// TODO: add error handling here
 }
 
 func processTemplatedUserdata(state multistep.StateBag) multistep.StepAction {
