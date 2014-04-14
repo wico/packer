@@ -83,6 +83,7 @@ func (s *stepHTTPServer) Cleanup(multistep.StateBag) {
 }
 
 func ipAddressToListenOn() *net.IPNet {
+        // TODO: use the ip bound to the IF you use to reach cloudstack
 	addrs, _ := net.InterfaceAddrs()
 	var ip *net.IPNet
 	for _, addr := range addrs {
